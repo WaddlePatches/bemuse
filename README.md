@@ -70,7 +70,7 @@ Provides paths to external tools required for functionality. `ffmpeg`, `ffprobe`
 default = modern
 # NB: File extensions are not included in the format strings
 classical = {composer!w?}/{album!w}/{.disc?Disc {disc}/#.}{track:02}-{composerlastname!w?}-{title!w}
-modern = {.albumartist!w?{albumartist}#{artist}.}/{album!w}/{.disc?Disc {disc}/#.}{track:02}-{title!w}
+modern = {.album_artist!w?{album_artist}#{artist}.}/{album!w}/{.disc?Disc {disc}/#.}{track:02}-{title!w}
 
 [Metadata]
 # NB: {disc} will be removed if all tracks in the album have a value of 1
@@ -103,9 +103,9 @@ The format language is based on Python's *Format Specification Mini-Language* ht
   * `?` on its own will return the field value if it is present, otherwise an empty string
     * e.g. `{invalidtag?}` => "", `{title?}` => "Track Title"
   * `?` with text following it will format the following text, if the given field name is present, otherwise an empty string
-    * e.g. `{.albumartist?{albumartist}/{artist}.}`
+    * e.g. `{.album_artist?{album_artist}/{artist}.}`
   * `?` with a `#` clause works as an if/else
-    * e.g. `{.albumartist?{albumartist}/{artist}#{artist}.}` will resolved to `ALBUMARTIST`/`ARTIST` if `ALBUMARTIST` is present, otherwise to `ARTIST`
+    * e.g. `{.album_artist?{album_artist}/{artist}#{artist}.}` will resolved to `ALBUM_ARTIST`/`ARTIST` if `ALBUM_ARTIST` is present, otherwise to `ARTIST`
   * Conditionals can be nested
   * NB: the presence of a variable is tested before alignement and conversion are performed
 
