@@ -7,7 +7,7 @@ import pathlib
 
 import strink
 
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 
 class UpperDict(dict):
 	class _Sentinel(enum.Enum):
@@ -496,7 +496,12 @@ if __name__ == "__main__":
 			
 			# Ensure the correct suffix is used for transcoding
 			suffix = file_suffix or t.path.suffix
-			npath = new_path(args.format, t.tags, suffix)
+			try:
+				npath = new_path(args.format, t.tags, suffix)
+			except Exception as e:
+				# TODO: detect and skip albumarts with no tracks in the album
+				log.error(f"could not format new name for {t.filename!r} :: {type(e).__name__} {str(e)}")
+				continue
 			if args.list:
 				print(npath)
 				continue
