@@ -43,16 +43,16 @@ Yet another tool to rename or transcode music files based on metadata, but with 
   * 2 times: debug level "INFO"
   * 3 or more times: debug level "DEBUG"
 
-# Config File
+## Config File
 The config file is an INI-type format, using Python's built-in `configparser` library. Interpolation is disabled.
 
-## `[Format]` section
+### `[Format]` section
 This section defines the filename presets that can be specified with `--preset`. The special name `default` specifies which preset will be used if `--preset` and `--format` are not given. See *Format Rules* below.
 
-## `[Metadata]` section
+### `[Metadata]` section
 If `--adjust-metadata` is given, then tags are added to (or, if left blank, removed from) each file according to these rules. The key names specify the metadata field, and the values are the same type as used for *Format Rules* (see below).
 
-## `[Transcode:CODEC]` sections
+### `[Transcode:CODEC]` sections
 Each `[Transcode:CODEC]` section defines codec rules that can be speficied with the `--transcode` option. The name after the `:` in the section name is what is matched against the `CODEC` option on the commandline.
 
 `file_suffix` specifies the new filename suffix (including the `.` character), as this is not included in *Format Rules* (see below).
@@ -61,10 +61,10 @@ Each `[Transcode:CODEC]` section defines codec rules that can be speficied with 
 
 All other options are passed to `ffmpeg`.
 
-## `[Tools]` section (TODO)
+### `[Tools]` section (TODO)
 Provides paths to external tools required for functionality. `ffmpeg`, `ffprobe`, and `loudgain`
 
-## Example config file
+### Example config file
 ```ini
 [Format]
 default = modern
@@ -85,8 +85,7 @@ r:a = 48000
 vbr = on
 application = audio
 ```
-
-# Format Rules (the Strink formatter)
+## Format Rules (the Strink formatter)
 The format language is based on Python's *Format Specification Mini-Language* https://docs.python.org/3/library/string.html#formatspec.
 * `{{`, `}}`, and `##` are escaped literals, that resolve to `{`, `}` and `#` respectively
 * Variable fields are enclosed between `{` and `}`, or `{.` and `.}` (e.g. `{artist}`)
@@ -122,7 +121,19 @@ The following metadata tags are calculated programatically, and can be used even
 
 The `-Lf FORMAT` (and `-nf FORMAT`, when combined with other operational modes) options are recommended for testing.
 
-# Album Art
+## ReplayGain tags
+If the `--replaygain` option is specified, audio files are passed into `loudgain` and the following metadata is attached:
+| `loudgain` field | Source | Tags                                                        | Unit    |
+|------------------| :----: |-------------------------------------------------------------|    ---: |
+| Gain             | Track  | `REPLAYGAIN_TRACK_GAIN`, `R128_TRACK_GAIN`                  |      dB |
+| Gain             | Album  | `REPLAYGAIN_ALBUM_GAIN`, `R128_ALBUM_GAIN`                  |      dB |
+| True_Peak        | Track  | `REPLAYGAIN_TRACK_PEAK`, `R128_TRACK_PEAK`                  | (dBFS?) |
+| True_Peak        | Album  | `REPLAYGAIN_ALBUM_PEAK`, `R128_ALBUM_PEAK`                  | (dBFS?) |
+| Range            | Track  | `REPLAYGAIN_TRACK_RANGE`, `R128_TRACK_RANGE`                |      dB |
+| Range            | Album  | `REPLAYGAIN_ALBUM_RANGE`, `R128_ALBUM_RANGE`                |      dB |
+| Reference        | Album  | `REPLAYGAIN_REFERENCE_LOUDNESS`, `R128_REFERENCE_LOUDNESS`" |    LUFS |
+
+## Album Art
 If `--album-art` is given, then image files will be copied (or moved if `--remove` is specified) based on format rules.
 
 All files that `ffprobe` reports as a video with only single frame are considered images.
@@ -143,7 +154,7 @@ The caveat here is that if you only specify the `--album-art` operational mode, 
 
 NB: due to metadata collection, all album art will be processed only after all other media files have been processed, but on a per `path` basis.
 
-# Known Issues
+## Known Issues
 * Need better distinction for operational mode arguments
 * `--match` option not validated properly
 * No support for multiple *different* albums with the same name (they will all be treated as the same album, for both album art and ReplayGain purposes)
@@ -155,7 +166,7 @@ NB: due to metadata collection, all album art will be processed only after all o
 * internals: monolithic code style
 * debug: inconsistent messaging
 
-# TODO
+## TODO
 1. Actually upload the source (:
 2. Add an argument to specify an album-art preset, different to media file preset
 3. Implement system installation (install `strink` library)
