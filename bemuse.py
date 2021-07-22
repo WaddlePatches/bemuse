@@ -390,7 +390,7 @@ if __name__ == "__main__":
 					if select_file(meta.path.name):
 						yield meta
 
-	conf = configparser.ConfigParser(interpolation=None, delimiters="=")
+	conf = configparser.ConfigParser(interpolation=None, delimiters="=", inline_comment_prefixes=None)
 	if args.config:
 		conf.read(args.config)
 		if not args.format:
@@ -474,7 +474,8 @@ if __name__ == "__main__":
 
 		for t in tracks:
 			if len(ndiscs) > 1:
-				t.tags["adisc"] = t.tags.get("disc", None)
+				if "disc" in t.tags:
+					t.tags["adisc"] = t.tags["disc"]
 				
 			new = {}
 			# log.info(f"File: {t.filename!r}")
