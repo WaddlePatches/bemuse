@@ -161,6 +161,7 @@ NB: due to metadata collection, all album art will be processed only after all o
 * No sensible progress indicators
 * No non-English language support (i.e. for `{artist_the}`)
 * Album art image detection needs to be more rugged
+* Need better way to filter non-media files
 * Errors from `loudgain` and `ffmpeg` are ignored if not fatal
 * Untested on Windows, OSX, etc.
 * internals: monolithic code style
