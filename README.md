@@ -47,10 +47,10 @@ Yet another tool to rename or transcode music files based on metadata, but with 
 The config file is an INI-type format, using Python's built-in `configparser` library. Interpolation is disabled.
 
 ## `[Format]` section
-This section defines the filename presets that can be specified with `--preset`. The special name `default` specifies which preset will be used if `--preset` and `--format` are not given.
+This section defines the filename presets that can be specified with `--preset`. The special name `default` specifies which preset will be used if `--preset` and `--format` are not given. See *Format Rules* below.
 
 ## `[Metadata]` section
-If `--adjust-metadata` is given, then tags are added to each file according to these rules. The key names specify the metadata field, and the values are the same type as used for *Format Rules* (see below).
+If `--adjust-metadata` is given, then tags are added to (or, if left blank, removed from) each file according to these rules. The key names specify the metadata field, and the values are the same type as used for *Format Rules* (see below).
 
 ## `[Transcode:CODEC]` sections
 Each `[Transcode:CODEC]` section defines codec rules that can be speficied with the `--transcode` option. The name after the `:` in the section name is what is matched against the `CODEC` option on the commandline.
@@ -109,10 +109,17 @@ The format language is based on Python's *Format Specification Mini-Language* ht
   * Conditionals can be nested
   * NB: the presence of a variable is tested before alignement and conversion are performed
 
+The following metadata tags are calculated programatically, and can be used even if they are not present in the media files:
+|Field|Related tag|Description|
+|-----|-----------|-----------|
+|`{composerfirstnames}`|`COMPOSER`|All *except* the last space-separated sub-field of `{composer}`|
+|`{composerinitials}`|`COMPOSER`|The first character of each space-separated sub-field of `{composerfirstnames}`|
+|`{composerlastname}`|`COMPOSER`|The last space-separated sub-field of `{composer}`|
+|`{adisc}`|`DISC`|If all media files with the same `{album}` value have the same `{disc}` value, then `{adisc}` will be blank, otherwise `{disc}`|
+|`{title}`|Filename|If `{title}` is not already set, match the original filename|
+
 # Album Art
 If `--album-art` is given, then any image files that are found in the `paths` are considered album art for all media files in the same directory, or any subdirectory tree. Any format that `ffprobe` determines is an image will match.
-
-The image files are not renamed when they are copied
 
 E.g.
 ```
