@@ -375,7 +375,7 @@ if __name__ == "__main__":
 					for im in tuple(limg):
 						if len(shmeta):
 							im.tags.update(shmeta)
-						im.tags["title"] = meta.path.stem
+						im.tags["title"] = im.path.stem
 						im.tags.pop("track", None)
 						if select_file(im.path.name):
 							allimg.add(im)
@@ -474,7 +474,7 @@ if __name__ == "__main__":
 
 		for t in tracks:
 			if len(ndiscs) > 1:
-				t.tags["adisc"] = t.get("disc", None)
+				t.tags["adisc"] = t.tags.get("disc", None)
 				
 			new = {}
 			# log.info(f"File: {t.filename!r}")
