@@ -8,8 +8,8 @@ Yet another tool to rename or transcode music files based on metadata, but with 
 
 ### optional arguments:
 * `-h`, `--help`
-* `-A`, `--album-art`
-  * Detected image files will be copied to the same directories as new files. See *Album Art* below.
+* `-A`, `--album-art` **(operational mode)**
+  * Detected image files will be copied based on format rules. See *Album Art* and *Format Rules* below
 * `-c CONFIG`, `--config CONFIG`
   * Load a config file `CONFIG`. Defaults to `$HOME/.config/bemuse.cfg`
 * `-d DIRECTORY`, `--dest DIRECTORY`
@@ -18,23 +18,23 @@ Yet another tool to rename or transcode music files based on metadata, but with 
   * Read in a list of `paths` from the given `FILE`. Can be specified multiple times
 * `-E`, `--adjust-metadata`
   * Apply metadata rules from the config file. See *Config File*/*Metadata Section* below
-* `-G`, `--replaygain` (operation mode)
-  * Write ReplayGain tags (requires `loudgain` tool, https://github.com/Moonbase59/loudgain)
 * `-f FORMAT`, `--format FORMAT`
   * The target filename rules. See *Format Rules* below
+* `-G`, `--replaygain` **(operational mode)**
+  * Write ReplayGain tags (requires `loudgain` tool, https://github.com/Moonbase59/loudgain)
 * `-K`, `--remove`
   * Delete the original file once finished, and any empty directories left over
-* `-L`, `--list` (operation mode)
+* `-L`, `--list` **(operational mode)**
   * Print generated filenames without further operations
 * `-m REGEX`, `--match REGEX`
-  * Skip files with names that do not match the given (Python type) regex
+  * Only perform operations on files with names that match the given (Python type) regex
 * `-n`, `--dry-run`
   * Print information about the operations without performing them
 * `-P PRESET`, `--preset PRESET`
   * Select the named `PRESET` from the config file
-* `-R, --rename` (operation mode)
+* `-R, --rename` **(operational mode)**
   * Rename or move the files according to the given format. **This will overwite files that already exist**
-* `-T CODEC`, `--transcode CODEC` (operation mode)
+* `-T CODEC`, `--transcode CODEC` **(operational mode)**
   * Convert files using `CODEC` rules from the config file. **This will overwite files that already exist**
 * `-v`, `--verbose`
   * Increase verbosity level (can be specified multiple times).
@@ -69,11 +69,10 @@ Provides paths to external tools required for functionality. `ffmpeg`, `ffprobe`
 [Format]
 default = modern
 # NB: File extensions are not included in the format strings
-classical = {composer!w?}/{album!w}/{.disc?Disc {disc}/#.}{track:02}-{composerlastname!w?}-{title!w}
-modern = {.album_artist!w?{album_artist}#{artist}.}/{album!w}/{.disc?Disc {disc}/#.}{track:02}-{title!w}
+classical = {composer!w?}/{album!w}/{.adisc?Disc {disc}/#.}{track:02?}-{composerlastname!w?}-{title!w}
+modern = {.album_artist!w?{album_artist}#{artist}.}/{album!w}/{.adisc?Disc {disc}/#.}{track:02?}-{title!w}
 
 [Metadata]
-# NB: {disc} will be removed if all tracks in the album have a value of 1
 artistsort = {composerlastname!u}
 composersort = {composerlastname!u}
 
@@ -93,8 +92,10 @@ The format language is based on Python's *Format Specification Mini-Language* ht
 * Variable fields are enclosed between `{` and `}`, or `{.` and `.}` (e.g. `{artist}`)
 * Field names must conform to `[a-zA-Z][a-zA-Z0-9_]*`. Pythonic features like subscripting and attribute referencing are not supported
 * The alignment operator `:` is supported
-  * e.g. `Disc {disc:>2}` will right-align the `DISC` metadata to 2 characters wide
-  * e.g. `{track:03}` will zero-fill the `TRACK` metadata to 3 characters wide
+  * The default alignment is `>`, not `=`
+  * e.g. `{artist:10}` will right-align the `ARTIST` value to (at least) 10 characters wide
+  * e.g. `{track:03}` will zero-fill the `TRACK` value to 3 characters wide
+  * e.g. `{track:#^5}` will centre the `TRACK` in `#` characters, (at least) 5 characters wide
 * The conversion operator `!` is supported, and the following conversions are added:
   * `u` removes all accents from characters
   * `w` removes all accents from characters, and strips any characters not allowed in Windows filenames
@@ -107,36 +108,48 @@ The format language is based on Python's *Format Specification Mini-Language* ht
   * `?` with a `#` clause works as an if/else
     * e.g. `{.album_artist?{album_artist}/{artist}#{artist}.}` will resolved to `ALBUM_ARTIST`/`ARTIST` if `ALBUM_ARTIST` is present, otherwise to `ARTIST`
   * Conditionals can be nested
-  * NB: the presence of a variable is tested before alignement and conversion are performed
+  * NB: the presence of a variable is tested before alignment and conversion are performed
 
 The following metadata tags are calculated programatically, and can be used even if they are not present in the media files:
 |Field|Related tag|Description|
 |-----|-----------|-----------|
+|`{adisc}`|`DISC`|If all media files with the same `{album}` value have the same `{disc}` value, then `{adisc}` will be blank, otherwise `{disc}`|
+|`{artist_the}` and `{album_artist_the}`|`ARTIST` and `ALBUMARTIST`|If the artist value begins with the word "the", it is moved to the end (e.g. "The Who" → "Who, The")|
 |`{composerfirstnames}`|`COMPOSER`|All *except* the last space-separated sub-field of `{composer}`|
 |`{composerinitials}`|`COMPOSER`|The first character of each space-separated sub-field of `{composerfirstnames}`|
 |`{composerlastname}`|`COMPOSER`|The last space-separated sub-field of `{composer}`|
-|`{adisc}`|`DISC`|If all media files with the same `{album}` value have the same `{disc}` value, then `{adisc}` will be blank, otherwise `{disc}`|
 |`{title}`|Filename|If `{title}` is not already set, match the original filename|
 
+The `-Lf FORMAT` (and `-nf FORMAT`, when combined with other operational modes) options are recommended for testing.
+
 # Album Art
-If `--album-art` is given, then any image files that are found in the `paths` are considered album art for all media files in the same directory, or any subdirectory tree. Any format that `ffprobe` determines is an image will match.
+If `--album-art` is given, then image files will be copied (or moved if `--remove` is specified) based on format rules.
 
-E.g.
-```
-Music/
-Music/The Foo Bars/
-Music/The Foo Bars/Joe Bloggs.jpg
-Music/The Foo Bars/A Song of Singing and Songishness.flac
-Music/The Foo Bars/An Album of Tracks/
-...
-```
+All files that `ffprobe` reports as a video with only single frame are considered images.
 
-The `Joe Bloggs.jpg` file will be copied to the same directory as both `A Song of Singing and Songishness.flac` and the files in `An Album of Tracks`.
+Metadata is attached to image files with the following rules when scanning directories:
+* `{title}` always resolves to the original image filename
+* `{track}` is never present
+* Any metadata where the value is equal across all the tracks in the same directory as an image is attached
+* Any tracks in subdirectories of where an image is found are also checked for matching metadata values
+* If an image is found in a directory, metadata is not attached to images found in parent directories
+
+It may be necessary for your needs to write an "albumart" preset into your config file, along the lines of:
+```ini
+[Format]
+albumart = {.album_artist!w?{album_artist_the}#{artist_the}.}/{album}
+```
+The caveat here is that if you only specify the `--album-art` operational mode, then all your media files will still need to be scanned, in order to attach the metadata.
+
+NB: due to metadata collection, all album art will be processed only after all other media files have been processed, but on a per `path` basis.
 
 # Known Issues
-* Album art "support" is likely to be dodgy as of yet
+* Need better distinction for operational mode arguments
+* `--match` option not validated properly
 * No support for multiple *different* albums with the same name (they will all be treated as the same album, for both album art and ReplayGain purposes)
 * No sensible progress indicators
+* No non-English language support (i.e. for `{artist_the}`)
+* Album art image detection needs to be more rugged
 * Errors from `loudgain` and `ffmpeg` are ignored if not fatal
 * Untested on Windows, OSX, etc.
 * internals: monolithic code style
@@ -144,6 +157,10 @@ The `Joe Bloggs.jpg` file will be copied to the same directory as both `A Song o
 
 # TODO
 1. Actually upload the source (:
-2. Implement system installation (install `strink` library)
-2. Add `[Tools]` section to config file
-3. Modularise, add signalling system for progress (allow for GUI)
+2. Add an argument to specify an album-art preset, different to media file preset
+3. Implement system installation (install `strink` library)
+4. Add `[Tools]` section to config file
+5. Modularise, add signalling system for progress (allow for GUI)
+  * remove semi-hardcoded `ffprobe` output sections
+  * eventually use libavc* instead of calling `ffmpeg` and `ffprobe`
+  * eventually use libebur128 instead of calling `loudgain`
